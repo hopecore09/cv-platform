@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  firstName  String
+  lastName   String
+  role       String   @default("candidate")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  profileAttrs ProfileAttribute[]
+  positions    Position[]        @relation("RecruiterPositions")
+  cvs          CV[]
+}
+
+model Attribute {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  category    String
+  description String?
+  type        String
+  options     Json?
+  required    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profileAttrs ProfileAttribute[]
+  positionAttrs PositionAttribute[]
+  cvAttrs      CVAttribute[]
+}
+
+model ProfileAttribute {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attributeId Int
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, attributeId])
+}
+
+model Position {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  company     String?
+  level       String?
+  isPublic    Boolean  @default(true)
+  recruiterId Int
+  recruiter   User     @relation("RecruiterPositions", fields: [recruiterId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attrs    PositionAttribute[]
+  cvs      CV[]
+}
+
+model PositionAttribute {
+  id         Int      @id @default(autoincrement())
+  positionId Int
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  attributeId Int
+  attribute  Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  order      Int      @default(0)
+
+  @@unique([positionId, attributeId])
+}
+
+model CV {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positionId  Int
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attrs CVAttribute[]
+}
+
+model CVAttribute {
+  id          Int      @id @default(autoincrement())
+  cvId        Int
+  cv          CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  attributeId Int
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       Json?
+  isFilled    Boolean  @default(false)
+
+  @@unique([cvId, attributeId])
+}
