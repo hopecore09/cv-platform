@@ -7,13 +7,7 @@ dotenv.config()
 
 const app = express()
 
-console.log('📦 DATABASE_URL:', process.env.DATABASE_URL ? '✅ SET' : '❌ NOT SET')
-
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-}))
+app.use(cors({ origin: process.env.FRONTEND_URL}))
 app.use(express.json())
 app.use('/api', routes)
 
