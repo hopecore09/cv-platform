@@ -9,7 +9,7 @@ export default function Home() {
     queryFn: async () => {
       const [positions, cvs, attributes] = await Promise.all([
         api.get('/positions'),
-        api.get('/cv/my'),
+        api.get('/cv/all'),
         api.get('/attributes')
       ])
       return { positions: positions.data.length, cvs: cvs.data.length, attributes: attributes.data.length }
