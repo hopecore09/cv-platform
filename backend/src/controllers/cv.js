@@ -22,7 +22,15 @@ export const getOne = async (req, res) => {
     where: { id: +req.params.id },
     include: {
       user: { select: { firstName: true, lastName: true } },
-      position: { include: { attrs: { include: { attribute: true } } } },
+      position: { 
+        select: { 
+          id: true, 
+          title: true,
+          attrs: { 
+            include: { attribute: true } 
+          } 
+        } 
+      },
       attrs: { include: { attribute: true } }
     }
   })
