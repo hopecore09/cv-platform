@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, Row, Col, Badge } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../api'
 
 export default function Home() {
+  const { t } = useTranslation()
+
   const { data: stats } = useQuery({
     queryKey: ['stats'],
     queryFn: async () => {
@@ -12,7 +15,11 @@ export default function Home() {
         api.get('/cv/all'),
         api.get('/attributes')
       ])
-      return { positions: positions.data.length, cvs: cvs.data.length, attributes: attributes.data.length }
+      return { 
+        positions: positions.data.length, 
+        cvs: cvs.data.length, 
+        attributes: attributes.data.length 
+      }
     },
     staleTime: 1000 * 60 * 10
   })
@@ -25,13 +32,29 @@ export default function Home() {
 
   return (
     <div>
-      <h1 className="mb-4">Dashboard</h1>
+      <h1 className="mb-4">{t('home.statistics')}</h1>
       <Row className="mb-4">
-        <Col md={4}><Card><Card.Body><h5>Positions</h5><h2>{stats?.positions || 0}</h2></Card.Body></Card></Col>
-        <Col md={4}><Card><Card.Body><h5>CVs</h5><h2>{stats?.cvs || 0}</h2></Card.Body></Card></Col>
-        <Col md={4}><Card><Card.Body><h5>Attributes</h5><h2>{stats?.attributes || 0}</h2></Card.Body></Card></Col>
+        <Col md={4}>
+          <Card><Card.Body>
+            <h5>{t('home.positions')}</h5>
+            <h2>{stats?.positions || 0}</h2>
+          </Card.Body></Card>
+        </Col>
+        <Col md={4}>
+          <Card><Card.Body>
+            <h5>{t('home.cvs')}</h5>
+            <h2>{stats?.cvs || 0}</h2>
+          </Card.Body></Card>
+        </Col>
+        <Col md={4}>
+          <Card><Card.Body>
+            <h5>{t('home.attributes')}</h5>
+            <h2>{stats?.attributes || 0}</h2>
+          </Card.Body></Card>
+        </Col>
       </Row>
-      <h3 className="mb-3">Popular Positions</h3>
+
+      <h3 className="mb-3">{t('home.popularPositions')}</h3>
       {popular?.slice(0, 5).map(p => (
         <Card key={p.id} className="mb-2">
           <Card.Body className="d-flex justify-content-between align-items-center">
