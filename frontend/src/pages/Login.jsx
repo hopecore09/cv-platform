@@ -28,6 +28,9 @@ export default function Login() {
         <Card>
           <Card.Body>
             <h3 className="text-center mb-4">{t('app.login')}</h3>
+            <p className="text-center text-muted small mb-3">
+              Admin: admin@test.com / admin123
+            </p>
             {error && <Alert variant="danger">{error}</Alert>}
             <Form onSubmit={submit}>
               <Form.Group className="mb-3">
@@ -35,12 +38,14 @@ export default function Login() {
                 <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} required />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
+                <Form.Label>{t('auth.password')}</Form.Label>
                 <Form.Control type="password" value={password} onChange={e => setPassword(e.target.value)} required />
               </Form.Group>
               <Button type="submit" className="w-100">{t('app.login')}</Button>
             </Form>
-            <div className="text-center mt-3"><Link to="/register">{t('app.register')}</Link></div>
+            <div className="text-center mt-3">
+              <Link to="/register">{t('app.register')}</Link>
+            </div>
           </Card.Body>
         </Card>
       </div>
