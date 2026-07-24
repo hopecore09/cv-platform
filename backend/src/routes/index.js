@@ -37,6 +37,5 @@ router.get('/cv/:id', auth, cvCtrl.getOne)
 router.post('/cv', auth, cvCtrl.createOrUpdate)
 router.put('/cv/:id/publish', auth, cvCtrl.publish)
 router.get('/cv/position/:positionId', auth, cvCtrl.getByPosition)
-router.get('/cv/all', auth, cvCtrl.getAll)
 
 export default router
