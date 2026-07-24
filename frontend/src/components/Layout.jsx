@@ -28,7 +28,7 @@ export default function Layout() {
               <Nav.Link as={Link} to="/positions" className={isActive('/positions')}>
                 {t('app.positions')}
               </Nav.Link>
-              {user && ['candidate', 'admin'].includes(user?.role) && (
+              {user && ['candidate'].includes(user?.role) && (
                 <Nav.Link as={Link} to="/profile" className={isActive('/profile')}>
                   {t('app.profile')}
                 </Nav.Link>
