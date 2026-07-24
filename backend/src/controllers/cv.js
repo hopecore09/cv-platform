@@ -30,8 +30,6 @@ export const createOrUpdate = async (req, res) => {
     include: { attrs: { include: { attribute: true } } }
   })
   if (!position) return res.status(404).json({ error: 'Position not found' })
-
-  // ✅ ИСПРАВЛЕНО — findFirst вместо findUnique
   let cv = await prisma.cV.findFirst({
     where: {
       userId: req.user.id,
