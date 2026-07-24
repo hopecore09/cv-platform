@@ -8,7 +8,6 @@ export const getMy = async (req, res) => {
 }
 
 export const getAll = async (req, res) => {
-  try {
     const cvs = await prisma.cV.findMany({
       include: {
         user: { select: { firstName: true, lastName: true } },
@@ -16,10 +15,6 @@ export const getAll = async (req, res) => {
       }
     })
     res.json(cvs)
-  } catch (error) {
-    console.error('Error in getAll:', error)
-    res.status(500).json({ error: 'Failed to fetch CVs' })
-  }
 }
 
 export const getOne = async (req, res) => {
