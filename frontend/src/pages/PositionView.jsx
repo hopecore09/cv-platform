@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Badge, Form } from 'react-bootstrap'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
-import { DynamicForm } from '../components/DynamicForm'
+import DynamicForm from '../components/DynamicForm'
 import { useTranslation } from 'react-i18next'
 
 export default function PositionView() {
@@ -13,6 +13,7 @@ export default function PositionView() {
   const qc = useQueryClient()
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const [cvData, setCvData] = useState({})
+  const [selectedCvId, setSelectedCvId] = useState(null)
 
   const { data: position } = useQuery({
     queryKey: ['position', id],
@@ -22,13 +23,37 @@ export default function PositionView() {
 
   const { data: myCV } = useQuery({
     queryKey: ['my-cv', id],
-    queryFn: () => api.get('/cv/my').then(r => r.data.find(c => c.positionId === +id)),
-    enabled: !!id,
+    queryFn: async () => {
+      const res = await api.get('/cv/my')
+      return res.data.find(c => c.positionId === +id) || null
+    },
+    enabled: !!id && user?.role === 'candidate',
+    staleTime: 1000 * 60 * 2
+  })
+
+  const { data: allCVs } = useQuery({
+    queryKey: ['position-cvs', id],
+    queryFn: () => api.get(`/cv/position/${id}`).then(r => r.data),
+    enabled: !!id && ['recruiter', 'admin'].includes(user?.role),
     staleTime: 1000 * 60 * 2
   })
 
   useEffect(() => {
+    if (selectedCvId) {
+      api.get(`/cv/${selectedCvId}`).then(r => {
+        const data = {}
+        r.data.attrs?.forEach(a => {
+          const val = a.value
+          data[a.attributeId] = val?.value !== undefined ? val.value : val
+        })
+        setCvData(data)
+      })
+    }
+  }, [selectedCvId])
+
+  useEffect(() => {
     if (myCV) {
+      setSelectedCvId(myCV.id)
       api.get(`/cv/${myCV.id}`).then(r => {
         const data = {}
         r.data.attrs?.forEach(a => {
@@ -53,8 +78,8 @@ export default function PositionView() {
   if (!position) return <div className="text-center py-5">{t('app.loading')}</div>
 
   const isRecruiter = ['recruiter', 'admin'].includes(user?.role)
-  const canEdit = position.recruiterId === user?.id || isRecruiter
-  const positionAttrs = position.attrs?.map(a => a.attribute) || []
+  const isCandidate = user?.role === 'candidate'
+  const selectedCV = allCVs?.find(c => c.id === selectedCvId)
 
   return (
     <div>
@@ -62,39 +87,84 @@ export default function PositionView() {
         <div>
           <h2>{position.title}</h2>
           {position.company && <h6 className="text-muted">{position.company} • {position.level || 'No level'}</h6>}
-          <Badge bg={position.isPublic ? 'success' : 'warning'}>{position.isPublic ? 'Public' : 'Private'}</Badge>
-          <Badge bg="info" className="ms-2">{position.cvs?.length || 0} CVs</Badge>
+          <Badge bg="info">{position.cvs?.length || 0} CVs</Badge>
         </div>
         <div>
-          {canEdit && <Button variant="outline-primary" onClick={() => navigate(`/positions/${id}/edit`)}>Edit</Button>}
-          <Button variant="outline-secondary" className="ms-2" onClick={() => navigate('/positions')}>Back</Button>
+          {isRecruiter && (
+            <Button variant="outline-primary" size="sm" onClick={() => navigate(`/positions/${id}/edit`)}>Edit</Button>
+          )}
+          <Button variant="outline-secondary" size="sm" className="ms-2" onClick={() => navigate('/positions')}>Back</Button>
         </div>
       </div>
 
       {position.description && <Card className="mb-4"><Card.Body>{position.description}</Card.Body></Card>}
 
-      <Card className="mb-4">
-        <Card.Header><h5 className="mb-0">My CV</h5></Card.Header>
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">CV</h5>
+          {isRecruiter && allCVs?.length > 0 && (
+            <div className="mt-2">
+              <Form.Select 
+                value={selectedCvId || ''} 
+                onChange={e => setSelectedCvId(Number(e.target.value))}
+              >
+                <option value="">Select candidate...</option>
+                {allCVs.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.user?.firstName} {c.user?.lastName}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+          )}
+        </Card.Header>
         <Card.Body>
-          {myCV ? (
+          {isCandidate && !myCV && (
+            <Button onClick={() => saveCV.mutate()}>Create CV for this position</Button>
+          )}
+
+          {isCandidate && myCV && (
             <>
-              <DynamicForm attributes={positionAttrs} values={cvData} onChange={(id, value) => setCvData({ ...cvData, [id]: value })} />
+              <DynamicForm
+                attributes={position.attrs?.map(a => a.attribute) || []}
+                values={cvData}
+                onChange={(id, value) => setCvData({ ...cvData, [id]: value })}
+              />
               <div className="mt-3">
                 <Button variant="primary" onClick={() => saveCV.mutate()} disabled={saveCV.isPending}>
                   {saveCV.isPending ? 'Saving...' : 'Save CV'}
                 </Button>
-                {!myCV.isPublished ? (
+                {!myCV.isPublished && (
                   <Button variant="success" className="ms-2" onClick={() => publishCV.mutate()} disabled={publishCV.isPending}>
                     {t('cv.publish')}
                   </Button>
-                ) : (
-                  <Badge bg="success" className="ms-2">Published</Badge>
                 )}
+                {myCV.isPublished && <Badge bg="success" className="ms-2">Published</Badge>}
               </div>
             </>
-          ) : (
-            <Button onClick={() => saveCV.mutate()}>Create CV for this position</Button>
           )}
+
+          {isRecruiter && selectedCV && (
+            <>
+              <div className="mb-2">
+                <strong>{selectedCV.user?.firstName} {selectedCV.user?.lastName}</strong>
+                <Badge bg={selectedCV.isPublished ? 'success' : 'warning'} className="ms-2">
+                  {selectedCV.isPublished ? 'Published' : 'Draft'}
+                </Badge>
+              </div>
+              <DynamicForm
+                attributes={position.attrs?.map(a => a.attribute) || []}
+                values={cvData}
+                readOnly={true}
+              />
+            </>
+          )}
+
+          {isRecruiter && !selectedCV && allCVs?.length === 0 && (
+            <p className="text-muted">No CVs submitted yet</p>
+          )}
+
+          {!isCandidate && !isRecruiter && <p className="text-muted">No CV available</p>}
         </Card.Body>
       </Card>
     </div>

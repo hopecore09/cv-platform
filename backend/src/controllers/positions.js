@@ -28,10 +28,10 @@ export const getOne = async (req, res) => {
 }
 
 export const create = async (req, res) => {
-  const { title, description, company, level, isPublic, attributeIds } = req.body
+  const { title, description, company, level, attributeIds } = req.body
   const position = await prisma.position.create({
     data: {
-      title, description, company, level, isPublic,
+      title, description, company, level,
       recruiterId: req.user.id,
       attrs: { create: attributeIds?.map((id, i) => ({ attributeId: id, order: i })) || [] }
     },

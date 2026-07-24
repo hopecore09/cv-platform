@@ -5,14 +5,22 @@ import api from '../api'
 
 export default function CVPage() {
   const { id } = useParams()
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
   const { data: cv, isLoading } = useQuery({
     queryKey: ['cv', id],
     queryFn: () => api.get(`/cv/${id}`).then(r => r.data),
-    staleTime: 1000 * 60 * 2
+    staleTime: 1000 * 60 * 2,
+    enabled: !!id
   })
 
   if (isLoading) return <div className="text-center py-5">Loading...</div>
   if (!cv) return <div className="text-center py-5">CV not found</div>
+
+  const isOwner = cv.userId === user?.id
+  const isRecruiter = ['recruiter', 'admin'].includes(user?.role)
+  const canView = isOwner || isRecruiter
+
+  if (!canView) return <div className="text-center py-5">Access denied</div>
 
   return (
     <div>
@@ -21,12 +29,14 @@ export default function CVPage() {
         <Link to="/profile"><Button variant="outline-secondary">Back</Button></Link>
       </div>
 
-      <Card className="mb-4"><Card.Body>
-        <h5>{cv.position?.title}</h5>
-        <Badge bg={cv.isPublished ? 'success' : 'warning'}>
-          {cv.isPublished ? 'Published' : 'Draft'}
-        </Badge>
-      </Card.Body></Card>
+      <Card className="mb-4">
+        <Card.Body>
+          <h5>{cv.position?.title}</h5>
+          <Badge bg={cv.isPublished ? 'success' : 'warning'}>
+            {cv.isPublished ? 'Published' : 'Draft'}
+          </Badge>
+        </Card.Body>
+      </Card>
 
       {cv.attrs?.map(a => {
         const val = a.value?.value !== undefined ? a.value.value : a.value

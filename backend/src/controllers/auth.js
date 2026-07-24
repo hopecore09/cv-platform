@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken'
 
 export const register = async (req, res) => {
   const { email, password, firstName, lastName } = req.body
+  if (!email || !password || !firstName || !lastName) {
+    return res.status(400).json({ error: 'All fields required' })
+  }
   try {
     const user = await prisma.user.create({
       data: { email, password: await bcrypt.hash(password, 10), firstName, lastName }
@@ -44,14 +47,28 @@ export const updateRole = async (req, res) => {
   if (!['candidate', 'recruiter', 'admin'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role' })
   }
+
+  const userId = +req.params.id
+
+  if (role === 'recruiter') {
+    await prisma.cV.deleteMany({
+      where: { userId }
+    })
+  }
+
   const user = await prisma.user.update({
-    where: { id: +req.params.id },
+    where: { id: userId },
     data: { role }
   })
+
   res.json({ id: user.id, email: user.email, role: user.role })
 }
 
 export const deleteUser = async (req, res) => {
-  await prisma.user.delete({ where: { id: +req.params.id } })
+  const userId = +req.params.id
+
+  await prisma.cV.deleteMany({ where: { userId } })
+  
+  await prisma.user.delete({ where: { id: userId } })
   res.status(204).send()
 }

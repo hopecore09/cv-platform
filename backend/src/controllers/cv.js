@@ -31,8 +31,12 @@ export const createOrUpdate = async (req, res) => {
   })
   if (!position) return res.status(404).json({ error: 'Position not found' })
 
-  let cv = await prisma.cV.findUnique({
-    where: { userId_positionId: { userId: req.user.id, positionId: +positionId } }
+  // ✅ ИСПРАВЛЕНО — findFirst вместо findUnique
+  let cv = await prisma.cV.findFirst({
+    where: {
+      userId: req.user.id,
+      positionId: +positionId
+    }
   })
 
   if (cv) {
@@ -54,7 +58,12 @@ export const createOrUpdate = async (req, res) => {
   if (attributes) {
     for (const [attrId, value] of Object.entries(attributes)) {
       await prisma.cVAttribute.upsert({
-        where: { cvId_attributeId: { cvId: cv.id, attributeId: +attrId } },
+        where: { 
+          cvId_attributeId: { 
+            cvId: cv.id, 
+            attributeId: +attrId 
+          } 
+        },
         update: { value, isFilled: value !== null && value !== '' },
         create: { cvId: cv.id, attributeId: +attrId, value, isFilled: value !== null && value !== '' }
       })
@@ -62,6 +71,22 @@ export const createOrUpdate = async (req, res) => {
   }
 
   res.json(cv)
+}
+
+export const getByPosition = async (req, res) => {
+  const { positionId } = req.params
+  const position = await prisma.position.findUnique({ where: { id: +positionId } })
+  if (!position) return res.status(404).json({ error: 'Not found' })
+  
+  const isRecruiter = ['recruiter', 'admin'].includes(req.user.role)
+  if (!isRecruiter && position.recruiterId !== req.user.id) {
+    return res.status(403).json({ error: 'Access denied' })
+  }
+  
+  res.json(await prisma.cV.findMany({
+    where: { positionId: +positionId, isPublished: true },
+    include: { user: { select: { firstName: true, lastName: true } } }
+  }))
 }
 
 export const publish = async (req, res) => {

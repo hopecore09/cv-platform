@@ -29,13 +29,19 @@ export default function PositionForm() {
 
   useEffect(() => {
     if (position?.attrs) {
-      setAttrs(position.attrs.map(a => ({ value: a.attributeId, label: a.attribute?.name || '' })))
+      setAttrs(position.attrs.map(a => ({ value: a.attributeId, label: a.attribute.name })))
     }
   }, [position])
 
   const save = useMutation({
     mutationFn: (data) => {
-      const payload = { ...data, attributeIds: attrs.map(a => a.value) }
+      const payload = {
+        title: data.title,
+        description: data.description,
+        company: data.company || null,
+        level: data.level || null,
+        attributeIds: attrs.map(a => a.value)
+      }
       return id ? api.put(`/positions/${id}`, payload) : api.post('/positions', payload)
     },
     onSuccess: () => { qc.invalidateQueries(['positions']); navigate('/positions') },
@@ -44,7 +50,8 @@ export default function PositionForm() {
 
   const submit = (e) => {
     e.preventDefault()
-    const data = Object.fromEntries(new FormData(e.target))
+    const formData = new FormData(e.target)
+    const data = Object.fromEntries(formData)
     save.mutate(data)
   }
 
@@ -53,40 +60,42 @@ export default function PositionForm() {
       <h2 className="mb-4">{id ? 'Edit' : 'New'} Position</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       <Form onSubmit={submit}>
-        <Card className="mb-4"><Card.Body>
-          <Row>
-            <Col md={6}><Form.Group><Form.Label>Title</Form.Label><Form.Control name="title" defaultValue={position?.title} required /></Form.Group></Col>
-            <Col md={6}><Form.Group><Form.Label>Company</Form.Label><Form.Control name="company" defaultValue={position?.company} /></Form.Group></Col>
-          </Row>
-          <Row>
-            <Col md={6}><Form.Group><Form.Label>Level</Form.Label>
-              <Form.Select name="level" defaultValue={position?.level}>
-                <option value="">Select...</option>
-                {['Junior', 'Middle', 'Senior', 'Lead', 'C-level'].map(l => <option key={l}>{l}</option>)}
-              </Form.Select>
-            </Form.Group></Col>
-            <Col md={6}>
-              <Form.Group><Form.Label>Status</Form.Label>
-                <Form.Select name="isPublic" defaultValue={position?.isPublic ?? true}>
-                  <option value="true">Public</option>
-                  <option value="false">Private</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Form.Group><Form.Label>Description</Form.Label><Form.Control as="textarea" rows={3} name="description" defaultValue={position?.description} /></Form.Group>
-        </Card.Body></Card>
+        <Card className="mb-4">
+          <Card.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group><Form.Label>Title</Form.Label><Form.Control name="title" defaultValue={position?.title} required /></Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group><Form.Label>Company</Form.Label><Form.Control name="company" defaultValue={position?.company} /></Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group><Form.Label>Level</Form.Label>
+                  <Form.Select name="level" defaultValue={position?.level}>
+                    <option value="">Select...</option>
+                    {['Junior', 'Middle', 'Senior', 'Lead', 'C-level'].map(l => <option key={l}>{l}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+            <Form.Group><Form.Label>Description</Form.Label><Form.Control as="textarea" rows={3} name="description" defaultValue={position?.description} /></Form.Group>
+          </Card.Body>
+        </Card>
 
-        <Card><Card.Body>
-          <Form.Label>Attributes</Form.Label>
-          <Select
-            isMulti
-            options={allAttrs?.map(a => ({ value: a.id, label: a.name })) || []}
-            value={attrs}
-            onChange={setAttrs}
-            placeholder="Select attributes..."
-          />
-        </Card.Body></Card>
+        <Card>
+          <Card.Body>
+            <Form.Label>Attributes</Form.Label>
+            <Select
+              isMulti
+              options={allAttrs?.map(a => ({ value: a.id, label: a.name })) || []}
+              value={attrs}
+              onChange={setAttrs}
+              placeholder="Select attributes..."
+            />
+          </Card.Body>
+        </Card>
 
         <div className="mt-4">
           <Button type="submit" variant="primary" disabled={save.isPending}>

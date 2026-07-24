@@ -25,17 +25,16 @@ export default function Positions() {
     onSuccess: () => { qc.invalidateQueries(['positions']); setSelected([]) }
   })
 
-  const handleDelete = (id, e) => {
-    e.stopPropagation()
-    if (window.confirm('Delete this position?')) remove.mutate([id])
-  }
+  const canManage = ['recruiter', 'admin'].includes(user?.role)
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>{t('pos.title')}</h2>
-        {user?.role === 'recruiter' && (
-          <Button onClick={() => navigate('/positions/new')}><Plus size={18} /> {t('app.new')}</Button>
+        {canManage && (
+          <Button onClick={() => navigate('/positions/new')}>
+            <Plus size={18} /> {t('app.new')}
+          </Button>
         )}
       </div>
 
@@ -44,14 +43,20 @@ export default function Positions() {
         <Form.Control placeholder={t('app.search')} value={search} onChange={e => setSearch(e.target.value)} />
       </InputGroup>
 
-      {selected.length > 0 && (
-        <div className="mb-3 p-2 bg-light rounded d-flex align-items-center gap-3">
-          <span>{selected.length} selected</span>
-          <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>
-            {t('app.delete')}
-          </Button>
-        </div>
-      )}
+      <div className="d-flex align-items-center gap-3 p-2 mb-3 bg-light rounded">
+        {selected.length > 0 ? (
+          <>
+            <span className="fw-semibold">{selected.length} selected</span>
+            {canManage && (
+              <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>
+                {t('app.delete')}
+              </Button>
+            )}
+          </>
+        ) : (
+          <span className="text-muted" style={{ fontSize: '0.85rem' }}>Select items to delete</span>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="text-center py-5">{t('app.loading')}</div>
@@ -61,7 +66,7 @@ export default function Positions() {
             <tr>
               <th style={{ width: 40 }}>
                 <Form.Check
-                  checked={selected.length === positions?.length}
+                  checked={selected.length === positions?.length && positions?.length > 0}
                   onChange={e => setSelected(e.target.checked ? positions.map(p => p.id) : [])}
                 />
               </th>
@@ -69,12 +74,18 @@ export default function Positions() {
               <th>{t('pos.company')}</th>
               <th>{t('pos.level')}</th>
               <th>{t('pos.cvs')}</th>
-              <th>{t('pos.status')}</th>
             </tr>
           </thead>
           <tbody>
             {positions?.length ? positions.map(p => (
-              <tr key={p.id} className={selected.includes(p.id) ? 'table-active' : ''}>
+              <tr
+                key={p.id}
+                className={selected.includes(p.id) ? 'table-active' : ''}
+                onDoubleClick={() => {
+                  if (canManage) navigate(`/positions/${p.id}/edit`)
+                }}
+                style={{ cursor: 'pointer' }}
+              >
                 <td>
                   <Form.Check
                     checked={selected.includes(p.id)}
@@ -83,40 +94,13 @@ export default function Positions() {
                     )}
                   />
                 </td>
-                <td>
-                  <Link to={`/positions/${p.id}`}>{p.title}</Link>
-                  <span className="ms-2">
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="p-0 text-secondary"
-                      onClick={(e) => { e.stopPropagation(); navigate(`/positions/${p.id}/edit`) }}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      ✏️
-                    </Button>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="p-0 text-danger"
-                      onClick={(e) => handleDelete(p.id, e)}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      🗑️
-                    </Button>
-                  </span>
-                </td>
+                <td><Link to={`/positions/${p.id}`}>{p.title}</Link></td>
                 <td>{p.company || '-'}</td>
                 <td>{p.level && <Badge bg="secondary">{p.level}</Badge>}</td>
                 <td><Badge bg="info">{p._count?.cvs || 0}</Badge></td>
-                <td>
-                  <Badge bg={p.isPublic ? 'success' : 'warning'}>
-                    {p.isPublic ? t('pos.public') : t('pos.private')}
-                  </Badge>
-                </td>
               </tr>
             )) : (
-              <tr><td colSpan="6" className="text-center py-4">{t('app.noData')}</td></tr>
+              <tr><td colSpan="5" className="text-center py-4">{t('app.noData')}</td></tr>
             )}
           </tbody>
         </Table>

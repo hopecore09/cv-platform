@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-export default function Layout() {  // ← export default function!
+export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, i18n } = useTranslation()
@@ -28,7 +28,7 @@ export default function Layout() {  // ← export default function!
               <Nav.Link as={Link} to="/positions" className={isActive('/positions')}>
                 {t('app.positions')}
               </Nav.Link>
-              {user && (
+              {user && ['candidate', 'admin'].includes(user?.role) && (
                 <Nav.Link as={Link} to="/profile" className={isActive('/profile')}>
                   {t('app.profile')}
                 </Nav.Link>
@@ -40,22 +40,27 @@ export default function Layout() {  // ← export default function!
               )}
               {user?.role === 'admin' && (
                 <Nav.Link as={Link} to="/admin/users" className={isActive('/admin/users')}>
-                  👥 Users
+                  {t('app.users')}
                 </Nav.Link>
               )}
             </Nav>
             <Nav>
               <NavDropdown title={i18n.language.toUpperCase()}>
                 {['en', 'ru'].map(l => (
-                  <NavDropdown.Item key={l} onClick={() => { i18n.changeLanguage(l); localStorage.setItem('language', l) }}>
+                  <NavDropdown.Item 
+                    key={l} 
+                    onClick={() => { 
+                      i18n.changeLanguage(l)
+                      localStorage.setItem('language', l)
+                    }}
+                  >
                     {l}
                   </NavDropdown.Item>
                 ))}
               </NavDropdown>
-              <NavDropdown title={theme === 'light' ? '☀️' : '🌙'}>
-                {['light', 'dark'].map(t => (
-                  <NavDropdown.Item key={t} onClick={() => setTheme(t)}>{t}</NavDropdown.Item>
-                ))}
+              <NavDropdown title={t('app.theme')}>
+                <NavDropdown.Item onClick={() => setTheme('light')}>Light</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => setTheme('dark')}>Dark</NavDropdown.Item>
               </NavDropdown>
               {user ? (
                 <Button variant="outline-light" size="sm" onClick={() => { localStorage.clear(); navigate('/login') }}>
@@ -71,7 +76,7 @@ export default function Layout() {  // ← export default function!
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      <Container>
+      <Container className="py-3">
         <Outlet />
       </Container>
     </div>

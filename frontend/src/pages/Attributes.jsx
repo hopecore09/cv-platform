@@ -36,11 +36,17 @@ export default function Attributes() {
     onSuccess: () => { qc.invalidateQueries(['attributes']); setShow(false); setEditing(null) }
   })
 
+  const canManage = ['recruiter', 'admin'].includes(JSON.parse(localStorage.getItem('user') || 'null')?.role)
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>{t('attr.title')}</h2>
-        <Button onClick={() => { setEditing(null); setShow(true) }}><Plus size={18} /> {t('app.new')}</Button>
+        {canManage && (
+          <Button onClick={() => { setEditing(null); setShow(true) }}>
+            <Plus size={18} /> {t('app.new')}
+          </Button>
+        )}
       </div>
 
       <div className="d-flex gap-3 mb-3">
@@ -54,12 +60,20 @@ export default function Attributes() {
         </Form.Select>
       </div>
 
-      {selected.length > 0 && (
-        <div className="mb-3 p-2 bg-light rounded d-flex align-items-center gap-3">
-          <span>{selected.length} selected</span>
-          <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>{t('app.delete')}</Button>
-        </div>
-      )}
+      <div className="d-flex align-items-center gap-3 p-2 mb-3 bg-light rounded">
+        {selected.length > 0 ? (
+          <>
+            <span className="fw-semibold">{selected.length} selected</span>
+            {canManage && (
+              <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>
+                {t('app.delete')}
+              </Button>
+            )}
+          </>
+        ) : (
+          <span className="text-muted" style={{ fontSize: '0.85rem' }}>Select items to delete</span>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="text-center py-5">{t('app.loading')}</div>
@@ -67,13 +81,28 @@ export default function Attributes() {
         <Table hover responsive>
           <thead>
             <tr>
-              <th><Form.Check checked={selected.length === attrs?.length} onChange={e => setSelected(e.target.checked ? attrs.map(a => a.id) : [])} /></th>
-              <th>{t('attr.name')}</th><th>{t('attr.category')}</th><th>{t('attr.type')}</th><th>{t('attr.required')}</th>
+              <th style={{ width: 40 }}>
+                <Form.Check
+                  checked={selected.length === attrs?.length && attrs?.length > 0}
+                  onChange={e => setSelected(e.target.checked ? attrs.map(a => a.id) : [])}
+                />
+              </th>
+              <th>{t('attr.name')}</th>
+              <th>{t('attr.category')}</th>
+              <th>{t('attr.type')}</th>
+              <th>{t('attr.required')}</th>
             </tr>
           </thead>
           <tbody>
             {attrs?.length ? attrs.map(a => (
-              <tr key={a.id} className={selected.includes(a.id) ? 'table-active' : ''}>
+              <tr
+                key={a.id}
+                className={selected.includes(a.id) ? 'table-active' : ''}
+                onDoubleClick={() => {
+                  if (canManage) { setEditing(a); setShow(true) }
+                }}
+                style={{ cursor: canManage ? 'pointer' : 'default' }}
+              >
                 <td>
                   <Form.Check
                     checked={selected.includes(a.id)}
@@ -82,16 +111,10 @@ export default function Attributes() {
                     )}
                   />
                 </td>
-                <td>
-                  {a.name}
-                  <span className="ms-2">
-                    <Button variant="link" size="sm" className="p-0 text-secondary" onClick={() => { setEditing(a); setShow(true) }}>✏️</Button>
-                    <Button variant="link" size="sm" className="p-0 text-danger" onClick={() => remove.mutate([a.id])}>🗑️</Button>
-                  </span>
-                </td>
+                <td>{a.name}</td>
                 <td><Badge bg="secondary">{a.category}</Badge></td>
                 <td>{a.type}</td>
-                <td>{a.required ? '✅' : '❌'}</td>
+                <td>{a.required ? 'Y' : 'N'}</td>
               </tr>
             )) : (
               <tr><td colSpan="5" className="text-center py-4">{t('app.noData')}</td></tr>
@@ -115,7 +138,7 @@ export default function Attributes() {
                 {['string', 'text', 'numeric', 'date', 'boolean', 'dropdown'].map(t => <option key={t}>{t}</option>)}
               </Form.Select>
             </Form.Group>
-            <Form.Group className="mb-3"><Form.Label>{t('attr.options')} (comma separated)</Form.Label><Form.Control name="options" defaultValue={editing?.options?.join(', ')} /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>{t('attr.options')} (comma separated)</Form.Label><Form.Control name="options" defaultValue={editing?.options?.join(', ')} placeholder="Option1, Option2" /></Form.Group>
             <Form.Group className="mb-3"><Form.Check type="checkbox" name="required" label={t('attr.required')} defaultChecked={editing?.required} /></Form.Group>
             <Form.Group className="mb-3"><Form.Label>{t('attr.description')}</Form.Label><Form.Control name="description" defaultValue={editing?.description} /></Form.Group>
           </Modal.Body>

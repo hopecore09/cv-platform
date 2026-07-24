@@ -25,22 +25,24 @@ export default function Login() {
   return (
     <div className="row justify-content-center mt-5">
       <div className="col-md-6 col-lg-4">
-        <Card><Card.Body>
-          <h3 className="text-center mb-4">{t('app.login')}</h3>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={submit}>
-            <Form.Group className="mb-3">
-              <Form.Label>{t('profile.email')}</Form.Label>
-              <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-            </Form.Group>
-            <Button type="submit" className="w-100">{t('app.login')}</Button>
-          </Form>
-          <div className="text-center mt-3"><Link to="/register">{t('app.register')}</Link></div>
-        </Card.Body></Card>
+        <Card>
+          <Card.Body>
+            <h3 className="text-center mb-4">{t('app.login')}</h3>
+            {error && <Alert variant="danger">{error}</Alert>}
+            <Form onSubmit={submit}>
+              <Form.Group className="mb-3">
+                <Form.Label>{t('profile.email')}</Form.Label>
+                <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Password</Form.Label>
+                <Form.Control type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+              </Form.Group>
+              <Button type="submit" className="w-100">{t('app.login')}</Button>
+            </Form>
+            <div className="text-center mt-3"><Link to="/register">{t('app.register')}</Link></div>
+          </Card.Body>
+        </Card>
       </div>
     </div>
   )

@@ -1,12 +1,10 @@
 import express from 'express'
+import { auth, role } from '../middleware/auth.js'
 import * as authCtrl from '../controllers/auth.js'
 import * as attrCtrl from '../controllers/attributes.js'
 import * as posCtrl from '../controllers/positions.js'
 import * as profCtrl from '../controllers/profile.js'
 import * as cvCtrl from '../controllers/cv.js'
-import { auth } from '../middleware/auth.js'
-import { role } from '../middleware/role.js'
-
 
 const router = express.Router()
 
@@ -38,5 +36,6 @@ router.get('/cv/my', auth, cvCtrl.getMy)
 router.get('/cv/:id', auth, cvCtrl.getOne)
 router.post('/cv', auth, cvCtrl.createOrUpdate)
 router.put('/cv/:id/publish', auth, cvCtrl.publish)
+router.get('/cv/position/:positionId', auth, cvCtrl.getByPosition)
 
 export default router

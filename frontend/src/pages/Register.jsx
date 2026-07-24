@@ -21,18 +21,20 @@ export default function Register() {
   return (
     <div className="row justify-content-center mt-5">
       <div className="col-md-6 col-lg-4">
-        <Card><Card.Body>
-          <h3 className="text-center mb-4">Register</h3>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={submit}>
-            <Form.Group className="mb-3"><Form.Label>First Name</Form.Label><Form.Control name="firstName" required /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Last Name</Form.Label><Form.Control name="lastName" required /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control name="email" type="email" required /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Password</Form.Label><Form.Control name="password" type="password" required /></Form.Group>
-            <Button type="submit" className="w-100">Register</Button>
-          </Form>
-          <div className="text-center mt-3"><Link to="/login">Already have an account?</Link></div>
-        </Card.Body></Card>
+        <Card>
+          <Card.Body>
+            <h3 className="text-center mb-4">Register</h3>
+            {error && <Alert variant="danger">{error}</Alert>}
+            <Form onSubmit={submit}>
+              <Form.Group className="mb-3"><Form.Label>First Name</Form.Label><Form.Control name="firstName" required /></Form.Group>
+              <Form.Group className="mb-3"><Form.Label>Last Name</Form.Label><Form.Control name="lastName" required /></Form.Group>
+              <Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control name="email" type="email" required /></Form.Group>
+              <Form.Group className="mb-3"><Form.Label>Password</Form.Label><Form.Control name="password" type="password" required /></Form.Group>
+              <Button type="submit" className="w-100">Register</Button>
+            </Form>
+            <div className="text-center mt-3"><Link to="/login">Already have an account?</Link></div>
+          </Card.Body>
+        </Card>
       </div>
     </div>
   )

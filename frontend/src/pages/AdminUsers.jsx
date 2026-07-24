@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Table, Button, Badge } from 'react-bootstrap'
+import { Table, Button, Badge, Form } from 'react-bootstrap'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
+import { useTranslation } from 'react-i18next'
 
 export default function AdminUsers() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
-  const [message, setMessage] = useState('')
+  const [selected, setSelected] = useState([])
 
   const { data: users } = useQuery({
     queryKey: ['admin-users'],
@@ -15,34 +17,90 @@ export default function AdminUsers() {
 
   const changeRole = useMutation({
     mutationFn: ({ id, role }) => api.put(`/admin/users/${id}/role`, { role }),
-    onSuccess: () => {
-      qc.invalidateQueries(['admin-users'])
-      setMessage({ type: 'success', text: 'Role updated!' })
-      setTimeout(() => setMessage(''), 3000)
-    },
-    onError: () => setMessage({ type: 'danger', text: 'Failed to update role' })
+    onSuccess: () => qc.invalidateQueries(['admin-users'])
   })
 
   const deleteUser = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries(['admin-users'])
-      setMessage({ type: 'success', text: 'User deleted!' })
-      setTimeout(() => setMessage(''), 3000)
-    }
+    onSuccess: () => qc.invalidateQueries(['admin-users'])
   })
+
+  const handleDeleteSelected = () => {
+    if (selected.length === 0) return
+    if (window.confirm(`Delete ${selected.length} user(s)?`)) {
+      Promise.all(selected.map(id => deleteUser.mutate(id)))
+      setSelected([])
+    }
+  }
+
+  const handleMakeRecruiter = () => {
+    if (selected.length === 0) return
+    Promise.all(selected.map(id => changeRole.mutate({ id, role: 'recruiter' })))
+    setSelected([])
+  }
+
+  const handleMakeCandidate = () => {
+    if (selected.length === 0) return
+    Promise.all(selected.map(id => changeRole.mutate({ id, role: 'candidate' })))
+    setSelected([])
+  }
 
   return (
     <div>
-      <h2 className="mb-4">👥 Manage Users</h2>
-      {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
+      <h2 className="mb-4">{t('app.users')}</h2>
+
+      <div className="d-flex align-items-center gap-2 p-2 mb-3 bg-light rounded flex-wrap">
+        <span className="fw-semibold me-2">{selected.length} selected</span>
+        {selected.length > 0 ? (
+          <>
+            <Button size="sm" variant="outline-primary" onClick={handleMakeRecruiter}>
+              Make Recruiter
+            </Button>
+            <Button size="sm" variant="outline-secondary" onClick={handleMakeCandidate}>
+              Make Candidate
+            </Button>
+            <Button size="sm" variant="outline-danger" onClick={handleDeleteSelected}>
+              Delete
+            </Button>
+          </>
+        ) : (
+          <span className="text-muted" style={{ fontSize: '0.85rem' }}>Select users to perform actions</span>
+        )}
+      </div>
+
       <Table hover responsive>
         <thead>
-          <tr><th>ID</th><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr>
+          <tr>
+            <th style={{ width: 40 }}>
+              <Form.Check
+                checked={selected.length === users?.length && users?.length > 0}
+                onChange={e => setSelected(e.target.checked ? users.map(u => u.id) : [])}
+              />
+            </th>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Role</th>
+          </tr>
         </thead>
         <tbody>
           {users?.map(u => (
-            <tr key={u.id}>
+            <tr
+              key={u.id}
+              className={selected.includes(u.id) ? 'table-active' : ''}
+              onClick={() => setSelected(prev =>
+                prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+              )}
+              style={{ cursor: 'pointer' }}
+            >
+              <td onClick={e => e.stopPropagation()}>
+                <Form.Check
+                  checked={selected.includes(u.id)}
+                  onChange={() => setSelected(prev =>
+                    prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                  )}
+                />
+              </td>
               <td>{u.id}</td>
               <td>{u.email}</td>
               <td>{u.firstName} {u.lastName}</td>
@@ -50,23 +108,6 @@ export default function AdminUsers() {
                 <Badge bg={u.role === 'admin' ? 'danger' : u.role === 'recruiter' ? 'warning' : 'secondary'}>
                   {u.role}
                 </Badge>
-              </td>
-              <td>
-                {u.role !== 'admin' && (
-                  <Button size="sm" variant="outline-primary" onClick={() => changeRole.mutate({ id: u.id, role: 'recruiter' })}>
-                    Make Recruiter
-                  </Button>
-                )}
-                {u.role === 'recruiter' && (
-                  <Button size="sm" variant="outline-secondary" className="ms-1" onClick={() => changeRole.mutate({ id: u.id, role: 'candidate' })}>
-                    Make Candidate
-                  </Button>
-                )}
-                {u.role !== 'admin' && (
-                  <Button size="sm" variant="outline-danger" className="ms-1" onClick={() => deleteUser.mutate(u.id)}>
-                    Delete
-                  </Button>
-                )}
               </td>
             </tr>
           ))}

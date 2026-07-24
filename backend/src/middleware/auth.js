@@ -10,3 +10,10 @@ export const auth = (req, res, next) => {
     res.status(401).json({ error: 'Invalid token' })
   }
 }
+
+export const role = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  next()
+}

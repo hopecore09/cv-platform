@@ -1,0 +1,14 @@
+{
+  "name": "cv-platform",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm install && npx prisma generate",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "start": "cd backend && npm start",
+    "postinstall": "npm run build"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
