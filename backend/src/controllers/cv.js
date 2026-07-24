@@ -7,6 +7,16 @@ export const getMy = async (req, res) => {
   }))
 }
 
+export const getAll = async (req, res) => {
+  const cvs = await prisma.cV.findMany({
+    include: {
+      user: { select: { firstName: true, lastName: true } },
+      position: { select: { title: true } }
+    }
+  })
+  res.json(cvs)
+}
+
 export const getOne = async (req, res) => {
   const cv = await prisma.cV.findUnique({
     where: { id: +req.params.id },
