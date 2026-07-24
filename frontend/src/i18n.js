@@ -27,8 +27,14 @@ export default i18n
             users: 'Users',
             theme: 'Theme',
             light: 'Light',
-            dark: 'Dark',
-            dashboard: 'Dashboard'
+            dark: 'Dark'
+          },
+          home: {
+            statistics: 'Statistics',
+            popularPositions: 'Most Popular Positions',
+            positions: 'Positions',
+            cvs: 'CVs',
+            attributes: 'Attributes'
           },
           auth: {
             password: 'Password',
@@ -132,8 +138,14 @@ export default i18n
             users: 'Пользователи',
             theme: 'Тема',
             light: 'Светлая',
-            dark: 'Тёмная',
-            dashboard: 'Главная'
+            dark: 'Тёмная'
+          },
+          home: {
+            statistics: 'Статистика',
+            popularPositions: 'Популярные позиции',
+            positions: 'Позиции',
+            cvs: 'Резюме',
+            attributes: 'Атрибуты'
           },
           auth: {
             password: 'Пароль',
