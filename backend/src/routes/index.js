@@ -33,6 +33,7 @@ router.get('/profile/me', auth, profCtrl.get)
 router.put('/profile/me', auth, profCtrl.update)
 
 router.get('/cv/my', auth, cvCtrl.getMy)
+router.get('/cv/all', auth, cvCtrl.getAll) 
 router.get('/cv/:id', auth, cvCtrl.getOne)
 router.post('/cv', auth, cvCtrl.createOrUpdate)
 router.put('/cv/:id/publish', auth, cvCtrl.publish)
