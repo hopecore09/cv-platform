@@ -3,6 +3,7 @@ import { Table, Form, Button, InputGroup, Badge, Modal } from 'react-bootstrap'
 import { Search, Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
+import { useAuth } from '../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 
 export default function Attributes() {
@@ -13,36 +14,48 @@ export default function Attributes() {
   const [show, setShow] = useState(false)
   const [editing, setEditing] = useState(null)
   const qc = useQueryClient()
+  const { canManageAttributes } = useAuth()
 
   const { data: attrs, isLoading } = useQuery({
     queryKey: ['attributes', search, category],
-    queryFn: () => api.get('/attributes', { params: { search, category } }).then(r => r.data),
-    staleTime: 1000 * 60 * 5
+    queryFn: () => api.get('/attributes', { params: { search, category } }).then(r => r.data)
   })
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => api.get('/attributes/categories').then(r => r.data),
-    staleTime: 1000 * 60 * 10
+    queryFn: () => api.get('/attributes/categories').then(r => r.data)
   })
 
   const remove = useMutation({
     mutationFn: (ids) => Promise.all(ids.map(id => api.delete(`/attributes/${id}`))),
-    onSuccess: () => { qc.invalidateQueries(['attributes']); setSelected([]) }
+    onSuccess: () => {
+      qc.invalidateQueries(['attributes'])
+      setSelected([])
+    }
   })
 
   const save = useMutation({
     mutationFn: (data) => data.id ? api.put(`/attributes/${data.id}`, data) : api.post('/attributes', data),
-    onSuccess: () => { qc.invalidateQueries(['attributes']); setShow(false); setEditing(null) }
+    onSuccess: () => {
+      qc.invalidateQueries(['attributes'])
+      setShow(false)
+      setEditing(null)
+    }
   })
 
-  const canManage = ['recruiter', 'admin'].includes(JSON.parse(localStorage.getItem('user') || 'null')?.role)
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelected(attrs.map(a => a.id))
+    } else {
+      setSelected([])
+    }
+  }
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>{t('attr.title')}</h2>
-        {canManage && (
+        {canManageAttributes && (
           <Button onClick={() => { setEditing(null); setShow(true) }}>
             <Plus size={18} /> {t('app.new')}
           </Button>
@@ -60,20 +73,14 @@ export default function Attributes() {
         </Form.Select>
       </div>
 
-      <div className="d-flex align-items-center gap-3 p-2 mb-3 bg-light rounded">
-        {selected.length > 0 ? (
-          <>
-            <span className="fw-semibold">{selected.length} selected</span>
-            {canManage && (
-              <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>
-                {t('app.delete')}
-              </Button>
-            )}
-          </>
-        ) : (
-          <span className="text-muted" style={{ fontSize: '0.85rem' }}>Select items to delete</span>
-        )}
-      </div>
+      {canManageAttributes && selected.length > 0 && (
+        <div className="d-flex align-items-center gap-3 p-2 mb-3 rounded" style={{ background: 'var(--bs-tertiary-bg)' }}>
+          <span className="fw-semibold">{selected.length} selected</span>
+          <Button variant="outline-danger" size="sm" onClick={() => remove.mutate(selected)}>
+            {t('app.delete')}
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="text-center py-5">{t('app.loading')}</div>
@@ -81,12 +88,14 @@ export default function Attributes() {
         <Table hover responsive>
           <thead>
             <tr>
-              <th style={{ width: 40 }}>
-                <Form.Check
-                  checked={selected.length === attrs?.length && attrs?.length > 0}
-                  onChange={e => setSelected(e.target.checked ? attrs.map(a => a.id) : [])}
-                />
-              </th>
+              {canManageAttributes && (
+                <th style={{ width: 40 }}>
+                  <Form.Check
+                    checked={selected.length === attrs?.length && attrs?.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+              )}
               <th>{t('attr.name')}</th>
               <th>{t('attr.category')}</th>
               <th>{t('attr.type')}</th>
@@ -97,27 +106,28 @@ export default function Attributes() {
             {attrs?.length ? attrs.map(a => (
               <tr
                 key={a.id}
-                className={selected.includes(a.id) ? 'table-active' : ''}
                 onDoubleClick={() => {
-                  if (canManage) { setEditing(a); setShow(true) }
+                  if (canManageAttributes) { setEditing(a); setShow(true) }
                 }}
-                style={{ cursor: canManage ? 'pointer' : 'default' }}
+                style={{ cursor: canManageAttributes ? 'pointer' : 'default' }}
               >
-                <td>
-                  <Form.Check
-                    checked={selected.includes(a.id)}
-                    onChange={() => setSelected(prev =>
-                      prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
-                    )}
-                  />
-                </td>
+                {canManageAttributes && (
+                  <td>
+                    <Form.Check
+                      checked={selected.includes(a.id)}
+                      onChange={() => setSelected(prev =>
+                        prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id]
+                      )}
+                    />
+                  </td>
+                )}
                 <td>{a.name}</td>
                 <td><Badge bg="secondary">{a.category}</Badge></td>
                 <td>{a.type}</td>
-                <td>{a.required ? 'Y' : 'N'}</td>
+                <td>{a.required ? '✅' : '❌'}</td>
               </tr>
             )) : (
-              <tr><td colSpan="5" className="text-center py-4">{t('app.noData')}</td></tr>
+              <tr><td colSpan={canManageAttributes ? 5 : 4} className="text-center py-4">{t('app.noData')}</td></tr>
             )}
           </tbody>
         </Table>
@@ -138,7 +148,7 @@ export default function Attributes() {
                 {['string', 'text', 'numeric', 'date', 'boolean', 'dropdown'].map(t => <option key={t}>{t}</option>)}
               </Form.Select>
             </Form.Group>
-            <Form.Group className="mb-3"><Form.Label>{t('attr.options')} (comma separated)</Form.Label><Form.Control name="options" defaultValue={editing?.options?.join(', ')} placeholder="Option1, Option2" /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>{t('attr.options')}</Form.Label><Form.Control name="options" defaultValue={editing?.options?.join(', ')} placeholder="Option1, Option2" /></Form.Group>
             <Form.Group className="mb-3"><Form.Check type="checkbox" name="required" label={t('attr.required')} defaultChecked={editing?.required} /></Form.Group>
             <Form.Group className="mb-3"><Form.Label>{t('attr.description')}</Form.Label><Form.Control name="description" defaultValue={editing?.description} /></Form.Group>
           </Modal.Body>

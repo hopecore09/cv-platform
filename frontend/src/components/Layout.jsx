@@ -28,22 +28,26 @@ export default function Layout() {
               <Nav.Link as={Link} to="/positions" className={isActive('/positions')}>
                 {t('app.positions')}
               </Nav.Link>
+
               {user && ['candidate'].includes(user?.role) && (
                 <Nav.Link as={Link} to="/profile" className={isActive('/profile')}>
                   {t('app.profile')}
                 </Nav.Link>
               )}
-              {user?.role === 'recruiter' && (
+
+              {user && ['recruiter', 'admin'].includes(user?.role) && (
                 <Nav.Link as={Link} to="/attributes" className={isActive('/attributes')}>
                   {t('app.attributes')}
                 </Nav.Link>
               )}
+
               {user?.role === 'admin' && (
                 <Nav.Link as={Link} to="/admin/users" className={isActive('/admin/users')}>
                   {t('app.users')}
                 </Nav.Link>
               )}
             </Nav>
+
             <Nav>
               <NavDropdown title={i18n.language.toUpperCase()}>
                 {['en', 'ru'].map(l => (

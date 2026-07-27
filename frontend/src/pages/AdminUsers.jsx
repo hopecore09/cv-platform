@@ -2,17 +2,22 @@ import { useState } from 'react'
 import { Table, Button, Badge, Form } from 'react-bootstrap'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api'
+import { useAuth } from '../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 
 export default function AdminUsers() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { isAdmin } = useAuth()
   const [selected, setSelected] = useState([])
+
+  if (!isAdmin) {
+    return <div className="text-center py-5">Access denied</div>
+  }
 
   const { data: users } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: () => api.get('/admin/users').then(r => r.data),
-    staleTime: 1000 * 60 * 2
+    queryFn: () => api.get('/admin/users').then(r => r.data)
   })
 
   const changeRole = useMutation({
@@ -25,41 +30,41 @@ export default function AdminUsers() {
     onSuccess: () => qc.invalidateQueries(['admin-users'])
   })
 
-  const handleDeleteSelected = () => {
+  const handleBulkAction = async (action, role) => {
     if (selected.length === 0) return
-    if (window.confirm(`Delete ${selected.length} user(s)?`)) {
-      Promise.all(selected.map(id => deleteUser.mutate(id)))
+    if (action === 'delete' && !window.confirm(`Delete ${selected.length} user(s)?`)) return
+
+    const promises = selected.map(id => {
+      if (action === 'delete') return deleteUser.mutate(id)
+      if (action === 'role') return changeRole.mutate({ id, role })
+    })
+    await Promise.all(promises)
+    setSelected([])
+  }
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelected(users.map(u => u.id))
+    } else {
       setSelected([])
     }
-  }
-
-  const handleMakeRecruiter = () => {
-    if (selected.length === 0) return
-    Promise.all(selected.map(id => changeRole.mutate({ id, role: 'recruiter' })))
-    setSelected([])
-  }
-
-  const handleMakeCandidate = () => {
-    if (selected.length === 0) return
-    Promise.all(selected.map(id => changeRole.mutate({ id, role: 'candidate' })))
-    setSelected([])
   }
 
   return (
     <div>
       <h2 className="mb-4">{t('app.users')}</h2>
 
-      <div className="d-flex align-items-center gap-2 p-2 mb-3 bg-light rounded flex-wrap">
+      <div className="d-flex align-items-center gap-2 p-2 mb-3 rounded flex-wrap" style={{ background: 'var(--bs-tertiary-bg)' }}>
         <span className="fw-semibold me-2">{selected.length} selected</span>
         {selected.length > 0 ? (
           <>
-            <Button size="sm" variant="outline-primary" onClick={handleMakeRecruiter}>
+            <Button size="sm" variant="outline-primary" onClick={() => handleBulkAction('role', 'recruiter')}>
               Make Recruiter
             </Button>
-            <Button size="sm" variant="outline-secondary" onClick={handleMakeCandidate}>
+            <Button size="sm" variant="outline-secondary" onClick={() => handleBulkAction('role', 'candidate')}>
               Make Candidate
             </Button>
-            <Button size="sm" variant="outline-danger" onClick={handleDeleteSelected}>
+            <Button size="sm" variant="outline-danger" onClick={() => handleBulkAction('delete')}>
               Delete
             </Button>
           </>
@@ -74,7 +79,7 @@ export default function AdminUsers() {
             <th style={{ width: 40 }}>
               <Form.Check
                 checked={selected.length === users?.length && users?.length > 0}
-                onChange={e => setSelected(e.target.checked ? users.map(u => u.id) : [])}
+                onChange={handleSelectAll}
               />
             </th>
             <th>ID</th>

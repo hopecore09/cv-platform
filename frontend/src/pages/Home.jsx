@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, Row, Col, Badge } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import api from '../api'
+import { useAuth } from '../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 
 export default function Home() {
   const { t } = useTranslation()
+  const { isAuthenticated } = useAuth()
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
@@ -15,42 +17,42 @@ export default function Home() {
         api.get('/cv/all'),
         api.get('/attributes')
       ])
-      return { 
-        positions: positions.data.length, 
-        cvs: cvs.data.length, 
-        attributes: attributes.data.length 
+      return {
+        positions: positions.data.length,
+        cvs: cvs.data.length,
+        attributes: attributes.data.length
       }
     },
-    staleTime: 1000 * 60 * 10
+    enabled: isAuthenticated
   })
 
   const { data: popular } = useQuery({
     queryKey: ['popular'],
     queryFn: () => api.get('/positions', { params: { sort: 'popular' } }).then(r => r.data),
-    staleTime: 1000 * 60 * 5
+    enabled: isAuthenticated
   })
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-5">
+        <h4>Please log in to view dashboard</h4>
+        <Button as={Link} to="/login" variant="primary" className="mt-3">Go to Login</Button>
+      </div>
+    )
+  }
 
   return (
     <div>
       <h1 className="mb-4">{t('home.statistics')}</h1>
       <Row className="mb-4">
         <Col md={4}>
-          <Card><Card.Body>
-            <h5>{t('home.positions')}</h5>
-            <h2>{stats?.positions || 0}</h2>
-          </Card.Body></Card>
+          <Card><Card.Body><h5>{t('home.positions')}</h5><h2>{stats?.positions || 0}</h2></Card.Body></Card>
         </Col>
         <Col md={4}>
-          <Card><Card.Body>
-            <h5>{t('home.cvs')}</h5>
-            <h2>{stats?.cvs || 0}</h2>
-          </Card.Body></Card>
+          <Card><Card.Body><h5>{t('home.cvs')}</h5><h2>{stats?.cvs || 0}</h2></Card.Body></Card>
         </Col>
         <Col md={4}>
-          <Card><Card.Body>
-            <h5>{t('home.attributes')}</h5>
-            <h2>{stats?.attributes || 0}</h2>
-          </Card.Body></Card>
+          <Card><Card.Body><h5>{t('home.attributes')}</h5><h2>{stats?.attributes || 0}</h2></Card.Body></Card>
         </Col>
       </Row>
 
